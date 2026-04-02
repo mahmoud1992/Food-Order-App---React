@@ -7,6 +7,7 @@ import UserProgressContext from "../store/UserProgressContext";
 import Modal from "./UI/Modal";
 import useHttp from "../hooks/useHttp";
 import Error from "./Error";
+import { useActionState } from "react";
 
 const requestConfig = {
   method: "POST",
@@ -17,13 +18,10 @@ function CheckOut() {
   const cartCtx = useContext(CartContext);
   const userProgressCtx = useContext(UserProgressContext);
 
-  const {
-    data,
-    isLoading: isSending,
-    error,
-    sendRequest,
-    clearData,
-  } = useHttp("http://localhost:3000/orders", requestConfig);
+  const { data, error, sendRequest, clearData } = useHttp(
+    "http://localhost:3000/orders",
+    requestConfig,
+  );
 
   const cartTotal = cartCtx.items.reduce(
     (totalPrice, item) => totalPrice + item.price * item.quantity,
@@ -39,25 +37,18 @@ function CheckOut() {
     clearData();
   }
 
-  function handleSubmitOrder(event) {
-    event.preventDefault();
-    // Here you would typically send the order data to your server
-    const formData = new FormData(event.target);
-    const customerData = Object.fromEntries(formData.entries());
-    sendRequest(
+  async function checkoutAction(prevState, fd) {
+    const customerData = Object.fromEntries(fd.entries());
+    await sendRequest(
       JSON.stringify({
-        order: { customer: customerData, items: cartCtx.items },
+        order: { items: cartCtx.items, customer: customerData },
       }),
     );
-
-    // fetch("http://localhost:3000/orders", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({
-    //     order: { customer: customerData, items: cartCtx.items },
-    //   }),
-    // });
   }
+  const [formState, formAction, isSending] = useActionState(
+    checkoutAction,
+    null,
+  );
   let actions = (
     <>
       <Button type="button" textOnly onClick={handleCloseCheckout}>
@@ -90,7 +81,7 @@ function CheckOut() {
       open={userProgressCtx.progress === "checkout"}
       onClose={handleCloseCheckout}
     >
-      <form onSubmit={handleSubmitOrder}>
+      <form action={formAction}>
         <h2>Checkout</h2>
         <p>Total Amount: {currencyFormatter.format(cartTotal)}</p>
         <Input lable="Full Name" id="name" type="text" />
