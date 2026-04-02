@@ -28,7 +28,11 @@ function Cart() {
     cartCtx.removeItem(item.id);
   }
   return (
-    <Modal className="cart" open={userProgressCtx.progress === "cart"}>
+    <Modal
+      className="cart"
+      open={userProgressCtx.progress === "cart"}
+      onClose={userProgressCtx.progress === "cart" ? handleCloseCart : null}
+    >
       <h2>My Cart</h2>
       <ul>
         {cartCtx.items.map((item) => (
@@ -47,7 +51,9 @@ function Cart() {
         <Button textOnly onClick={handleCloseCart}>
           Close
         </Button>
-        <Button onClick={handleCheckout}>Checkout</Button>
+        {cartCtx.items.length > 0 && (
+          <Button onClick={handleCheckout}>Checkout</Button>
+        )}
       </p>
     </Modal>
   );
